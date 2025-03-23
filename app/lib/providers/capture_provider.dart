@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+// import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_provider_utilities/flutter_provider_utilities.dart';
 import 'package:omi/backend/http/api/conversations.dart';
 import 'package:omi/backend/preferences.dart';
@@ -642,7 +642,8 @@ class CaptureProvider extends ChangeNotifier
 
     if (segments.isEmpty) {
       debugPrint('newSegments: ${newSegments.last}');
-      FlutterForegroundTask.sendDataToTask(jsonEncode({'location': true}));
+      //TODO: flutter_foreground_task!web
+      // FlutterForegroundTask.sendDataToTask(jsonEncode({'location': true}));
       _loadInProgressConversation();
     }
     var remainSegments = TranscriptSegment.updateSegments(segments, newSegments);
