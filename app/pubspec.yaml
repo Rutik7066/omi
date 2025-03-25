@@ -101,6 +101,7 @@ dependencies:
   file_picker: 8.0.7
   photo_view: ^0.15.0
 
+  vector_graphics: any
 dependency_overrides:
   http: ^1.2.1
   uuid: ^4.4.0
