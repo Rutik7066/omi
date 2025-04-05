@@ -3,8 +3,10 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:omi/backend/preferences.dart';
+import 'package:omi/utils/execution_gaurd.dart';
 import 'package:omi/utils/logger.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -109,35 +111,45 @@ Future<UserCredential?> signInWithApple() async {
 Future<UserCredential?> signInWithGoogle() async {
   try {
     debugPrint('Signing in with Google');
-    // Trigger the authentication flow
-    final GoogleSignInAccount? googleUser = await GoogleSignIn(
-            scopes: ['profile', 'email'],
-            clientId: "1031333818730-l9meebge7tpc0qmquvq6t5qpoe09o1ra.apps.googleusercontent.com")
-        .signIn();
-    debugPrint('Google User: $googleUser');
+    late UserCredential result;
+    if (ExecutionGuard.isWeb) {
+      FirebaseAuth app = FirebaseAuth.instance;
 
-    // Obtain the auth details from the request
-    final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
-    debugPrint('Google Auth: $googleAuth');
-    if (googleAuth == null) {
-      debugPrint('Failed to sign in with Google: googleAuth is NULL');
-      Logger.error('An error occurred while signing in. Please try again later. (Error: 40001)');
-      return null;
+      var googleProvider = GoogleAuthProvider();
+      googleProvider.addScope("https://www.googleapis.com/auth/userinfo.email");
+      googleProvider.addScope("https://www.googleapis.com/auth/userinfo.profile");
+      result = await app.signInWithPopup(googleProvider);
+      IdTokenResult? token = await app.currentUser?.getIdTokenResult();
+      debugPrint("Signed in id token: ${token?.token}");
+      debugPrint("Signed in id token expiry time: ${token?.expirationTime}");
+      debugPrint("Signed in access token: ${result.credential?.accessToken}");
+      // Need to be set here because getIdToken sometime not work  properly
+      SharedPreferencesUtil().authToken = token!.token!;
+      SharedPreferencesUtil().tokenExpirationTime = token.expirationTime!.millisecondsSinceEpoch;
+
+    } else {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn(scopes: ['profile', 'email']).signIn();
+      debugPrint('Google User: $googleUser');
+      final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+      debugPrint('Google Auth: $googleAuth');
+      if (googleAuth == null) {
+        debugPrint('Failed to sign in with Google: googleAuth is NULL');
+        Logger.error('An error occurred while signing in. Please try again later. (Error: 40001)');
+        return null;
+      }
+
+      if (googleAuth.accessToken == null && googleAuth.idToken == null) {
+        debugPrint('Failed to sign in with Google: accessToken, idToken are NULL');
+        Logger.error('An error occurred while signing in. Please try again later. (Error: 40002)');
+        return null;
+      }
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      result = await FirebaseAuth.instance.signInWithCredential(credential);
     }
-
-    // Create a new credential
-    if (googleAuth.accessToken == null && googleAuth.idToken == null) {
-      debugPrint('Failed to sign in with Google: accessToken, idToken are NULL');
-      Logger.error('An error occurred while signing in. Please try again later. (Error: 40002)');
-      return null;
-    }
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    // Once signed in, return the UserCredential
-    var result = await FirebaseAuth.instance.signInWithCredential(credential);
     var givenName = result.additionalUserInfo?.profile?['given_name'] ?? '';
     var familyName = result.additionalUserInfo?.profile?['family_name'] ?? '';
     var email = result.additionalUserInfo?.profile?['email'] ?? '';

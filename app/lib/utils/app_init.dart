@@ -28,13 +28,13 @@ import 'package:opus_flutter/opus_flutter.dart' as opus_flutter;
 import 'package:posthog_flutter/posthog_flutter.dart';
 
 Future<void> appInit() async {
-  if (F.env == Environment.prod) {
-    Env.init(ProdEnv());
-    await Firebase.initializeApp(options: prod.DefaultFirebaseOptions.currentPlatform);
+   if (F.env == Environment.prod) {
+    await Firebase.initializeApp(options: prod.DefaultFirebaseOptions.currentPlatform, name: 'prod');
   } else {
-    Env.init(DevEnv());
-    await Firebase.initializeApp(options: dev.DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(options: dev.DefaultFirebaseOptions.currentPlatform, name: 'dev');
   }
+
+  ServiceManager.init();
 
   if (!ExecutionGuard.isWeb) {
     FlutterForegroundTask.initCommunicationPort();
@@ -50,7 +50,6 @@ Future<void> appInit() async {
     await Posthog().setup(config);
   }
 
-  ServiceManager.init();
 
   await NotificationService.instance.initialize();
   await SharedPreferencesUtil.init();
@@ -72,7 +71,7 @@ Future<void> appInit() async {
       () async {
         Instabug.init(
           token: Env.instabugApiKey!,
-          invocationEvents: [InvocationEvent.none],
+          invocationEvents: [InvocationEvent.none], 
         );
         if (isAuth) {
           Instabug.identifyUser(
