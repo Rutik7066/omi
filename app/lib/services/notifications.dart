@@ -134,7 +134,7 @@ class NotificationService {
     if (token == null) return;
     String? timeZone = await getTimeZone();
     if (FirebaseAuth.instance.currentUser != null && token.isNotEmpty) {
-      await Intercom.instance.sendTokenToIntercom(token);
+      if(!ExecutionGuard.isWeb) await Intercom.instance.sendTokenToIntercom(token);
       await saveFcmTokenServer(token: token, timeZone: timeZone!);
     }
   }

@@ -38,7 +38,7 @@ dependencies:
   firebase_messaging: ^15.0.4
 
   # Analytics and Support
-  intercom_flutter: ^9.2.8 
+  intercom_flutter: ^9.2.8
   mixpanel_flutter: ^2.2.0
   posthog_flutter: ^4.10.2
 
@@ -103,7 +103,8 @@ dependencies:
 
   vector_graphics: any
   responsive_framework: ^1.5.1
-  intercom_flutter_web: ^1.1.5
+  
+  
 dependency_overrides:
   http: ^1.2.1
   uuid: ^4.4.0
