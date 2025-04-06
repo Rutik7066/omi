@@ -62,9 +62,7 @@ class _DeciderWidgetState extends State<DeciderWidget> {
 
   @override
   void initState() {
-    if (!ExecutionGuard.isWeb) {
-      initDeepLinks();
-    }
+    if (!ExecutionGuard.isWeb) initDeepLinks();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (context.read<ConnectivityProvider>().isConnected) {
         NotificationService.instance.saveNotificationToken();
@@ -76,20 +74,15 @@ class _DeciderWidgetState extends State<DeciderWidget> {
         context.read<AppProvider>().setAppsFromCache();
         context.read<MessageProvider>().refreshMessages();
       }
-
-      if (!ExecutionGuard.isWeb) {
-        try {
-          if (context.read<AuthenticationProvider>().isSignedIn()) {
-            await IntercomManager.instance.intercom.loginIdentifiedUser(
-              userId: SharedPreferencesUtil().uid,
-            );
-          } else {
-            await IntercomManager.instance.intercom.loginUnidentifiedUser();
-            IntercomManager.instance.setUserAttributes();
-          }
-        } catch (e) {
-          debugPrint('Failed to login to Intercom: $e');
+      try {
+        if (context.read<AuthenticationProvider>().isSignedIn()) {
+          await IntercomManager.instance.loginIdentifiedUser(userId: SharedPreferencesUtil().uid);
+        } else {
+          await IntercomManager.instance.loginUnidentifiedUser();
+          IntercomManager.instance.setUserAttributes();
         }
+      } catch (e) {
+        debugPrint('Failed to login to Intercom: $e');
       }
     });
     super.initState();
@@ -116,4 +109,3 @@ class _DeciderWidgetState extends State<DeciderWidget> {
     );
   }
 }
-

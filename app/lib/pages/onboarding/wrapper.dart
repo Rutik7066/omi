@@ -91,14 +91,12 @@ class _OnboardingWrapperState extends State<OnboardingWrapper> with TickerProvid
     List<Widget> pages = [
       // TODO: if connected already, stop animation and display battery
       AuthComponent(
-        onSignIn: () {
+        onSignIn: () async{
           SharedPreferencesUtil().hasOmiDevice = true;
           SharedPreferencesUtil().verifiedPersonaId = null;
           MixpanelManager().onboardingStepCompleted('Auth');
           context.read<HomeProvider>().setupHasSpeakerProfile();
-          IntercomManager.instance.intercom.loginIdentifiedUser(
-            userId: SharedPreferencesUtil().uid,
-          );
+          await IntercomManager().loginIdentifiedUser(userId: SharedPreferencesUtil().uid);
           if (SharedPreferencesUtil().onboardingCompleted) {
             routeToPage(context, const HomePageWrapper(), replace: true);
           } else {
@@ -183,7 +181,8 @@ class _OnboardingWrapperState extends State<OnboardingWrapper> with TickerProvid
               Center(
                 child: Container(
                   width: ResponsiveBreakpoints.of(context).largerThan(TABLET) ? 800 : null,
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical:  ResponsiveBreakpoints.of(context).largerThan(TABLET)? 32 :8),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 16, vertical: ResponsiveBreakpoints.of(context).largerThan(TABLET) ? 32 : 8),
                   child: ListView(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
