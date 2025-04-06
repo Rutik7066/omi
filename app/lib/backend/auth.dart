@@ -111,45 +111,31 @@ Future<UserCredential?> signInWithApple() async {
 Future<UserCredential?> signInWithGoogle() async {
   try {
     debugPrint('Signing in with Google');
-    late UserCredential result;
-    if (ExecutionGuard.isWeb) {
-      FirebaseAuth app = FirebaseAuth.instance;
-
-      var googleProvider = GoogleAuthProvider();
-      googleProvider.addScope("https://www.googleapis.com/auth/userinfo.email");
-      googleProvider.addScope("https://www.googleapis.com/auth/userinfo.profile");
-      result = await app.signInWithPopup(googleProvider);
-      IdTokenResult? token = await app.currentUser?.getIdTokenResult();
-      debugPrint("Signed in id token: ${token?.token}");
-      debugPrint("Signed in id token expiry time: ${token?.expirationTime}");
-      debugPrint("Signed in access token: ${result.credential?.accessToken}");
-      // Need to be set here because getIdToken sometime not work  properly
-      SharedPreferencesUtil().authToken = token!.token!;
-      SharedPreferencesUtil().tokenExpirationTime = token.expirationTime!.millisecondsSinceEpoch;
-
-    } else {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn(scopes: ['profile', 'email']).signIn();
-      debugPrint('Google User: $googleUser');
-      final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
-      debugPrint('Google Auth: $googleAuth');
-      if (googleAuth == null) {
-        debugPrint('Failed to sign in with Google: googleAuth is NULL');
-        Logger.error('An error occurred while signing in. Please try again later. (Error: 40001)');
-        return null;
-      }
-
-      if (googleAuth.accessToken == null && googleAuth.idToken == null) {
-        debugPrint('Failed to sign in with Google: accessToken, idToken are NULL');
-        Logger.error('An error occurred while signing in. Please try again later. (Error: 40002)');
-        return null;
-      }
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      result = await FirebaseAuth.instance.signInWithCredential(credential);
+    FirebaseAuth app = FirebaseAuth.instance;
+    final GoogleSignInAccount? googleUser = await GoogleSignIn(
+      scopes: ['profile', 'email'],
+      clientId: "1031333818730-l9meebge7tpc0qmquvq6t5qpoe09o1ra.apps.googleusercontent.com",
+    ).signIn();
+    debugPrint('Google User: $googleUser');
+    final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+    debugPrint('Google Auth: $googleAuth');
+    if (googleAuth == null) {
+      debugPrint('Failed to sign in with Google: googleAuth is NULL');
+      Logger.error('An error occurred while signing in. Please try again later. (Error: 40001)');
+      return null;
     }
+
+    if (googleAuth.accessToken == null && googleAuth.idToken == null) {
+      debugPrint('Failed to sign in with Google: accessToken, idToken are NULL');
+      Logger.error('An error occurred while signing in. Please try again later. (Error: 40002)');
+      return null;
+    }
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    UserCredential result = await app.signInWithCredential(credential);
     var givenName = result.additionalUserInfo?.profile?['given_name'] ?? '';
     var familyName = result.additionalUserInfo?.profile?['family_name'] ?? '';
     var email = result.additionalUserInfo?.profile?['email'] ?? '';
@@ -158,7 +144,18 @@ Future<UserCredential?> signInWithGoogle() async {
       SharedPreferencesUtil().givenName = givenName;
       SharedPreferencesUtil().familyName = familyName;
     }
+
+    IdTokenResult? token = await app.currentUser?.getIdTokenResult();
+    // Need to be set here because getIdToken sometime not work  properly
+    SharedPreferencesUtil().authToken = token!.token!;
+    SharedPreferencesUtil().tokenExpirationTime = token.expirationTime!.millisecondsSinceEpoch;
+
+    debugPrint("Signed in id token: ${token.token}");
+    debugPrint("Signed in id token expiry time: ${token.expirationTime?.toLocal()}");
+    debugPrint("Signed in access token: ${result.credential?.accessToken}");
+
     // TODO: test subsequent signIn
+
     debugPrint('signInWithGoogle Email: ${SharedPreferencesUtil().email}');
     debugPrint('signInWithGoogle Name: ${SharedPreferencesUtil().givenName}');
     return result;
