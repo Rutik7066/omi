@@ -43,7 +43,10 @@ Future<http.Response?> makeApiCall({
     }
 
     final client = http.Client();
-
+    // For development only
+    url = "https://cors-anywhere.herokuapp.com/$url";
+    headers["Origin"]= 'http://localhost:53844';
+    
     http.Response? response = await _performRequest(client, url, headers, body, method);
     if (response.statusCode == 401) {
       Logger.log('Token expired on 1st attempt');
@@ -68,7 +71,7 @@ Future<http.Response?> makeApiCall({
             message: 'Authentication failed. Please sign in again.');
       }
     }
-
+    debugPrint("Request completed statu code: ${response.statusCode} status: ${response.reasonPhrase}");
     return response;
   } catch (e, stackTrace) {
     debugPrint('HTTP request failed: $e, $stackTrace');
